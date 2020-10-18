@@ -1,0 +1,106 @@
+(1)
+set key value：
+get key：
+getset key value：
+del key：
+del snol
+incr key：
+decr key：
+append key value：
+
+
+(2)
+package myRPC.qf.itcast.redis.stringdemo;
+
+
+import com.google.gson.Gson;
+import redis.clients.jedis.Jedis;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+public class StringDemo2 {
+    private  static Jedis jedis = new Jedis("192.168.222.156",6379);
+
+    //将字符串缓存到String数据结构中
+    public static void stringTest(){
+        jedis.set("user:001:name1","dance");
+        jedis.set("user:002:name1","G-Dragon");
+        jedis.set("user:003:name1","xiaoming");
+        jedis.set("user:004:name1","xiaofang");
+
+        String username001 = jedis.get("user:001:name1");
+        String username002 = jedis.get("user:002:name1");
+        String username003 = jedis.get("user:003:name1");
+        String username004 = jedis.get("user:004:name1");
+
+        System.out.println(username001);
+        System.out.println(username002);
+        System.out.println(username003);
+        System.out.println(username004);
+    }
+
+    //将对象缓存到String数据结构中
+    public static void objectTest() throws Exception{
+        final ProductInfo pro = new ProductInfo();
+        pro.setName("水瓶");
+        pro.setDesc("暖手");
+        pro.setPrice("36");
+
+       //将对象序列化成byte数组
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ObjectOutputStream oos = new ObjectOutputStream(bos);
+
+        //用对象序列化的方式将pro实例序列化并写入流中
+        oos.writeObject(pro);
+
+        //将bos转换成字节数组
+        final byte[] pByte = bos.toByteArray();
+
+        //将序列化后的对象缓存到string数据结构中
+        jedis.set("product:001".getBytes(), pByte);
+
+        //获取数据
+        final byte[] pByteRes = jedis.get("product:001".getBytes());
+
+        //将获取的数据反序列化
+        final ByteArrayInputStream bis = new ByteArrayInputStream(pByteRes);
+        final ObjectInputStream ois = new ObjectInputStream(bis);
+
+        //读取对象流中的ProductInfo对象
+        final ProductInfo pRes = (ProductInfo) ois.readObject();
+        System.out.println(pRes);
+
+    }
+
+    //将对象转换成json格式的字符串缓存到String数据结构中
+    public static void objectToJsonTest(){
+        final ProductInfo pro = new ProductInfo();
+        pro.setName("蜡烛");
+        pro.setDesc("星星之火");
+        pro.setPrice("8.88");
+
+        //把对象转换成json格式
+        Gson gson = new Gson();
+        String json = gson.toJson(pro);
+
+        //将json字符串缓存到Redis
+        jedis.set("produt:002",json);
+
+        //获取数据
+         String jsonRes = jedis.get("product:002");
+
+        //将json字符串转换成对象
+        ProductInfo productInfo = gson.fromJson(jsonRes, ProductInfo.class);
+
+        System.out.println(jsonRes);
+        System.out.println(productInfo);
+    }
+    public static void main(String[] args) throws Exception {
+//        stringTest();
+//        objectTest();
+        objectToJsonTest();
+    }
+}
